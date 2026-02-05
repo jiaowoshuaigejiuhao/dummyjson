@@ -62,7 +62,7 @@ allure serve ./allure-results
 
 
 ## 📂 目录结构
-
+'''text
 MiniShop_API_Automation/
 ├── apis/                  # 接口对象层 (API Objects)
 │   ├── base_api.py        # 核心封装 (Session, Log, Exception)
