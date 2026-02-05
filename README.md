@@ -8,9 +8,7 @@
 ## 📖 项目简介
 
 基于 **Python + Pytest + Requests + Allure** 实现的接口自动化测试框架。
-项目针对 [DummyJSON](https://dummyjson.com/) 的模拟电商业务（Auth, Products, Carts, Users, Posts, Todos 等）完成了全链路接口自动化覆盖。
-
-采用 **POM (Page Object Model)** 分层设计思想，具备**多环境切换**、**Session 全局共享**、**数据驱动**、**动态闭环断言**等企业级特性。
+项目针对 [DummyJSON](https://dummyjson.com/) 的模拟电商业务（Auth, Products, Carts, Users, Posts, Todos 等）完成了全链路接口自动化覆盖。具备**多环境切换**、**Session 全局共享**、**数据驱动**、**动态闭环断言**等企业级特性。
 
 ## 🏗️ 核心架构与技术栈
 
@@ -35,6 +33,11 @@ Allure 深度集成：
 自定义 Logger，将每个接口的 Method、URL、Params、Response 自动 Attach 到 Allure 报告步骤中，便于问题排查。
 
 ## 📊 测试报告截图
+<img width="1920" height="953" alt="image" src="https://github.com/user-attachments/assets/440d228d-beef-4711-bece-50a7e6ee0334" />
+<img width="1920" height="953" alt="image" src="https://github.com/user-attachments/assets/d80f12bc-1d2e-47c8-ba8f-d674a30b87c8" />
+<img width="1920" height="953" alt="image" src="https://github.com/user-attachments/assets/07245211-9519-4e63-9218-b25d7a3d20ea" />
+
+
 
 
 ## 🚀 快速开始
