@@ -43,27 +43,26 @@ Allure 深度集成：
 ## 🚀 快速开始
 1. 安装依赖
 Bash
+pip install -r requirements.txt
 
-```text pip install -r requirements.txt
 2. 运行测试
-```text Bash
+Bash
 
 # 默认运行 (Dev环境)
-```text pytest
+pytest
 
 # 指定环境
-```text pytest --env=test
+pytest --env=test
 
 # 生成 Allure 报告
-```text pytest --alluredir=./allure-results
-```text allure serve ./allure-results
+pytest --alluredir=./allure-results
+allure serve ./allure-results
 
 
 
 
 ## 📂 目录结构
 
-```text
 MiniShop_API_Automation/
 ├── apis/                  # 接口对象层 (API Objects)
 │   ├── base_api.py        # 核心封装 (Session, Log, Exception)
