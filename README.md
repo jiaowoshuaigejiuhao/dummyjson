@@ -24,6 +24,40 @@
   - 动态关联：通过 API 提取真实 ID 进行闭环测试，解决 Mock 数据不确定性问题。
 - **报告集成**：Allure 2 详细测试报告（包含 Request/Response 日志附件）。
 
+## ⚡️ 亮点实现
+Session 共享机制：
+在 conftest.py 中定义 global_session fixture，实现登录一次，所有业务模块（Product, Cart等）自动继承 Header 和 Token，大幅提升执行效率。
+
+健壮的断言策略：
+针对 Mock 数据易变的特性，采用“先查后验”的闭环逻辑。例如：测试“查询用户购物车”时，先获取存在购物车的 UserID，再进行查询，防止因随机数据导致误报。
+
+Allure 深度集成：
+自定义 Logger，将每个接口的 Method、URL、Params、Response 自动 Attach 到 Allure 报告步骤中，便于问题排查。
+
+## 📊 测试报告截图
+
+
+## 🚀 快速开始
+1. 安装依赖
+Bash
+
+```text pip install -r requirements.txt
+2. 运行测试
+```text Bash
+
+# 默认运行 (Dev环境)
+```text pytest
+
+# 指定环境
+```text pytest --env=test
+
+# 生成 Allure 报告
+```text pytest --alluredir=./allure-results
+```text allure serve ./allure-results
+
+
+
+
 ## 📂 目录结构
 
 ```text
@@ -48,31 +82,3 @@ MiniShop_API_Automation/
 ├── requirements.txt       # 依赖库
 └── run.py                 # 启动入口
 
-## ⚡️ 亮点实现
-Session 共享机制：
-在 conftest.py 中定义 global_session fixture，实现登录一次，所有业务模块（Product, Cart等）自动继承 Header 和 Token，大幅提升执行效率。
-
-健壮的断言策略：
-针对 Mock 数据易变的特性，采用“先查后验”的闭环逻辑。例如：测试“查询用户购物车”时，先获取存在购物车的 UserID，再进行查询，防止因随机数据导致误报。
-
-Allure 深度集成：
-自定义 Logger，将每个接口的 Method、URL、Params、Response 自动 Attach 到 Allure 报告步骤中，便于问题排查。
-
-🚀 快速开始
-1. 安装依赖
-Bash
-
-pip install -r requirements.txt
-2. 运行测试
-Bash
-
-# 默认运行 (Dev环境)
-pytest
-
-# 指定环境
-pytest --env=test
-
-# 生成 Allure 报告
-pytest --alluredir=./allure-results
-allure serve ./allure-results
-📊 测试报告截图
