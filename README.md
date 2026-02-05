@@ -1,0 +1,49 @@
+# MiniShop API Automation Framework 🚀
+
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Pytest](https://img.shields.io/badge/Pytest-7.0%2B-green)
+![Allure](https://img.shields.io/badge/Allure-Report-orange)
+![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
+
+## 📖 项目简介
+
+基于 **Python + Pytest + Requests + Allure** 实现的接口自动化测试框架。
+项目针对 [DummyJSON](https://dummyjson.com/) 的模拟电商业务（Auth, Products, Carts, Users, Posts, Todos 等）完成了全链路接口自动化覆盖。
+
+采用 **POM (Page Object Model)** 分层设计思想，具备**多环境切换**、**Session 全局共享**、**数据驱动**、**动态闭环断言**等企业级特性。
+
+## 🏗️ 核心架构与技术栈
+
+- **设计模式**：BaseApi 基础封装 + 业务 API 分层 + TestCases 分离。
+- **测试框架**：Pytest (Fixture 管理生命周期, Parametrize 实现数据驱动)。
+- **HTTP 客户端**：Requests (封装统一的日志记录、异常捕获、Session 保持)。
+- **鉴权管理**：实现 `Session Scope` 级的登录态共享，解决 Token 传递与复用问题。
+- **数据处理**：
+  - YAML 管理测试数据。
+  - JsonPath 处理深层嵌套 JSON 提取。
+  - 动态关联：通过 API 提取真实 ID 进行闭环测试，解决 Mock 数据不确定性问题。
+- **报告集成**：Allure 2 详细测试报告（包含 Request/Response 日志附件）。
+
+## 📂 目录结构
+
+```text
+MiniShop_API_Automation/
+├── apis/                  # 接口对象层 (API Objects)
+│   ├── base_api.py        # 核心封装 (Session, Log, Exception)
+│   ├── auth_api.py        # 认证模块
+│   ├── product_api.py     # 商品模块
+│   ├── cart_api.py        # 购物车模块
+│   └── ...
+├── config/                # 配置文件
+│   └── env.yaml           # 多环境配置 (Dev/Test)
+├── data/                  # 测试数据 (YAML)
+├── logs/                  # 运行日志
+├── tests/                 # 测试用例层
+│   ├── conftest.py        # Fixture 共享与配置
+│   ├── test_auth_flow.py
+│   ├── test_product_flow.py
+│   └── ...
+├── utils/                 # 工具类 (Log, Yaml)
+├── pytest.ini             # Pytest 配置文件
+├── requirements.txt       # 依赖库
+└── run.py                 # 启动入口
