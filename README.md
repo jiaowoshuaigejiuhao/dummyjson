@@ -62,7 +62,8 @@ allure serve ./allure-results
 
 
 ## 📂 目录结构
-'''text
+
+```text
 MiniShop_API_Automation/
 ├── apis/                  # 接口对象层 (API Objects)
 │   ├── base_api.py        # 核心封装 (Session, Log, Exception)
@@ -83,4 +84,3 @@ MiniShop_API_Automation/
 ├── pytest.ini             # Pytest 配置文件
 ├── requirements.txt       # 依赖库
 └── run.py                 # 启动入口
-
