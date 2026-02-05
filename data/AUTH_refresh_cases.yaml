@@ -1,0 +1,23 @@
+- case_name: "刷新成功-已登录"
+  pre_login: true
+  fake_token: null
+  expect:
+    status_code: 200
+    has_token: true
+    get_me_status_code: 200
+
+- case_name: "刷新失败-未登录"
+  pre_login: false
+  fake_token: null
+  expect:
+    status_code: 401
+    has_token: false
+    get_me_status_code: 401
+
+- case_name: "刷新失败-伪造token"
+  pre_login: false
+  fake_token: "invalid_token"
+  expect:
+    status_code: 401
+    has_token: false
+    get_me_status_code: 401
