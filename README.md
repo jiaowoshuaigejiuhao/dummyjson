@@ -3,141 +3,202 @@ MiniShop API Automation Framework 🚀
 
 框架具备：
 
-多环境切换、命令行参数控制（env/baseurl/timeout/proxy）
+多环境切换、命令行参数控制（--env / --baseurl / --timeout / --proxy / --insecure）
 Session 全局共享 + 干净 Session 隔离
 YAML 数据驱动（登录、搜索、分页、刷新 token 等）
 统一的 BaseApi 封装（超时、日志、Allure 附件、敏感字段脱敏）
 可选 Fiddler Mock/弱网注入开关（基于 header + fixture）
-Smoke/Negative/Need-fiddler 等用例分组能力
+Smoke / Negative / Need-fiddler 等用例分组能力
 🏗 核心架构与技术栈
-设计分层
+分层设计
+BaseApi（基础封装层）
 
-BaseApi：
-统一封装 requests.Session、timeout、URL 拼接、请求/响应日志、Allure 附件、异常处理与敏感字段脱敏。
-业务 API 分层 (ApiObject)：
-AuthApi / ProductApi / CartApi / UsersApi / ... 只关注接口路径和业务语义，构造函数透传 **kwargs（如 timeout）给 BaseApi，便于后续扩展重试/代理等能力。
-TestCases 分离：
-Auth、Product、Cart 等各自独立的 flow 文件，结合 YAML 数据驱动和 Pytest mark（smoke/negative）。
+封装 requests.Session
+URL 规范化（urljoin）
+默认 timeout（支持命令行覆盖）
+请求/响应日志
+Allure Request/Response 附件
+敏感字段脱敏（password / token / authorization）
+set_token() 统一写入 session.headers["Authorization"]
+业务 API 分层（ApiObject）
+
+AuthApi / ProductApi / CartApi / UsersApi / PostsApi / CommentsApi / TodosApi / RecipesApi
+构造函数统一为 __init__(base_url, session=None, **kwargs)，透传参数到 BaseApi，便于后续扩展（重试策略、默认 header 等）
+测试用例层（Tests）
+
+按业务模块拆分：test_auth_flow.py / test_product_flow.py / test_cart_flow.py ...
+Auth 模块覆盖登录、获取当前用户、刷新 token 正/反向场景
+Product 模块覆盖搜索、分页、排序、分类到详情小链路等
 主要技术栈
+Pytest
 
-测试框架：Pytest
-fixture 管理生命周期（session 和 function scope）
-pytest_addoption 自定义命令行参数：--env / --baseurl / --proxy / --insecure / --timeout
-parametrize + YAML 实现数据驱动
-mark 分类：smoke、negative、nondestructive、need_fiddler 等
-HTTP 客户端：Requests
-基于 requests.Session 做登录态复用（Authorization header）
-基于 BaseApi 统一注入 timeout，防止 CI 挂死
-数据处理：
-YAML 管理测试数据（AUTH_login_cases.yaml、PRODUCT_search_cases.yaml、AUTH_refresh_cases.yaml 等）
-动态关联：通过接口先查再用真实 ID（userId/productId/cartId），减少 Demo 环境不稳定带来的误报
-报告与日志：
-Allure 2：每个请求的 Request/Response Meta & Body 以附件形式挂到步骤上
-自定义 Logger：记录 Method/URL/脱敏后的 kwargs、状态码、耗时
+Fixture 生命周期管理（session / function scope）
+pytest_addoption 自定义命令行参数：
+--env：环境选择（dev/test）
+--baseurl：临时覆盖 env.yaml 中的 base_url
+--proxy：是否通过本机 Fiddler 代理
+--insecure：关闭 SSL 校验（用于 HTTPS 抓包）
+--timeout：统一超时（秒）
+parametrize + YAML 数据驱动（登录、搜索、刷新等场景）
+mark 分类：
+smoke：核心业务链路
+negative：负向/边界场景
+nondestructive：安全可跑的 Demo 用例
+need_fiddler：依赖 Fiddler Mock/弱网的用例
+Requests
+
+基于 Session 进行登录态复用（Authorization header）
+通过 BaseApi 的 timeout 参数控制网络策略
+数据驱动
+
+YAML 管理测试数据：
+AUTH_login_cases.yaml：登录正/反向场景
+AUTH_refresh_cases.yaml：token 刷新场景
+PRODUCT_search_cases.yaml：商品搜索/分页/边界场景
+通过“先查后用”的动态关联策略避免硬编码 ID（userId/productId/cartId）
+报告 & 日志
+
+Allure 2：按业务场景拆 step，附加 Request/Response（JSON/文本）
+自定义 Logger：记录 Method/URL/脱敏后的参数、状态码、耗时
 ⚙️ 框架亮点实现
 1. Session 共享 + 干净 Session 隔离
-在 tests/conftest.py 中，通过 session_factory + shared_session + clean_session 设计：
+在 tests/conftest.py 中，通过 session_factory + shared_session + clean_session 构建两类 Session：
 
-shared_session (session scope)
-用于业务回归流：通过 logged_in_auth_api 登录一次后，所有业务 Api（ProductApi、CartApi 等）共享同一 Session 和 Token。
-clean_session (function scope)
-用于负向/安全测试：auth_api 使用独立 Session，测试错误密码/伪造 token 等场景，避免污染全局登录态。
+shared_session（session 作用域）
+
+业务回归使用：logged_in_auth_api 在会话级别登录一次，将 token 写入 shared_session.headers["Authorization"]。
+其他 Api（ProductApi / CartApi / UsersApi ...）通过 api_factory 复用该 Session，实现“登录一次，全局复用”。
+clean_session（function 作用域）
+
+负向/隔离场景使用：auth_api 使用独立 Session，测试错误密码、伪造 token 等，不会污染全局登录态。
 2. BaseApi 工程化封装
-apis/base_api.py 封装了请求的各个横切能力：
+apis/base_api.py 提供统一的请求入口：
 
-URL 规范化：base_url.rstrip("/") + "/" + urljoin 防止路径拼错
-默认超时：支持 --timeout 命令行参数，未显式传入时统一使用 BaseApi 的配置
-请求/响应日志与 Allure 附件：
-Request：method / url / headers / json/data（均做敏感字段脱敏）
-Response Meta：status_code / elapsed_ms / headers / url
-Response Body：JSON 优先，其次 text
-敏感字段脱敏：对 password/token/authorization 等字段做统一替换，日志与 Allure 报告中不会泄漏真实值
-Token 管理：set_token() 自动写入 session.headers["Authorization"]，实现登录一次，多模块复用
-3. 鉴权与 Auth 流程设计
-针对 DummyJSON Auth 模块，设计了完整的登录/鉴权/刷新流程测试：
+URL 拼接与规范化：base_url.rstrip("/") + "/" + urljoin
+默认 timeout：支持命令行 --timeout 覆盖，无需每个请求手动传
+日志 & Allure 附件：
+Request：method/url/headers/json/data（敏感字段统一脱敏）
+Response Meta：status_code/elapsed_ms/headers/url
+Response Body：优先 JSON，异常时回退到 text
+敏感字段脱敏：password/token/authorization 等字段自动替换为 ***，防止日志和报告泄漏敏感信息
+set_token(token, scheme="Bearer")：统一注入 Authorization header
+3. Auth 模块测试设计（登录/鉴权/刷新）
+登录场景（test_login_cases + YAML）
 
-登录场景：
-使用 AUTH_login_cases.yaml 数据驱动：覆盖正常登录、密码错误、用户不存在、空用户名/密码、缺字段、类型错误等
-测试函数统一断言：
-HTTP 状态码
-token 是否存在（兼容 token/accessToken）
-正向用例用户名一致
-负向用例错误 message 包含预期关键字（大小写不敏感）
-/auth/me 场景：
-未登录访问 /auth/me：打上 @pytest.mark.negative，验证返回未授权
-已登录访问 /auth/me：打上 @pytest.mark.smoke，验证返回当前用户信息（username/email 等）
-刷新 token 场景：
-通过 AUTH_refresh_cases.yaml 组合 pre_login + fake_token + expect 字段：
+覆盖：
+登录成功（示例账号）
+密码错误
+用户名不存在
+用户名/密码为空串
+缺少字段
+类型错误（数字类型用户名/密码）
+断言：
+状态码 == 预期
+根据 YAML 中的 has_token 判断 token 存在性（兼容 token/accessToken）
+正向用例校验 username 一致
+负向用例 message 包含关键字（大小写不敏感，如 "invalid"、"username"）
+核心登录链路（smoke）
+
+test_login_success：单条快速验证登录接口可用
+test_get_me_after_login：在已登录 session 下访问 /auth/me，验证返回当前用户信息（id/username/email）
+未登录访问 /auth/me（negative）
+
+test_get_me_without_login：验证未授权访问受保护资源时返回 4xx
+刷新 token 场景（test_refresh_cases + YAML）
+
+通过 pre_login + fake_token + expect 组合：
 已登录有效 token 刷新成功
-未登录/无 token 刷新失败
-伪造 token/过期 token 行为（根据 DummyJSON 实际行为调整期望）
-刷新成功后使用新 token 再调 /auth/me 验证新 token 真的有效
-4. 商品搜索/分类等业务测试设计
-搜索场景（test_search_products）：
-利用 PRODUCT_search_cases.yaml 管理多种搜索组合：
-不同关键字：iphone / samsung / phone / 特殊字符 / 不存在关键字
-边界 limit：1、>系统上限
-验证总数 min_total、每次返回条数 max_limit、字段存在 has_field
-测试逻辑统一：
-len(products) <= max_limit（分页逻辑）
-total >= min_total 或 total == 0（不存在关键字）
-has_field 在第一条商品中存在（如 title/price）
-分类到详情链路：
-通过 test_category_workflow/小链路用例：
-GET /products/category/{category} → 取一个 product → GET /products/{id}
-对比 id/title 等字段一致性
-5. Fiddler Mock/弱网注入预埋能力
-通过 header + fixture 的设计，使得 pytest 用例可以“按需触发” Fiddler 中配置的 Mock/弱网规则：
+未登录、无 token 刷新失败
+伪造 token、模拟过期 token 行为（根据 DummyJSON 实际行为调整期望）
+刷新成功时：
+从响应中取出新 token
+写回 Session
+再调 /auth/me 验证新 token 真的可用
+4. 商品模块测试设计（搜索/分页/分类链路）
+搜索场景（test_search_products + PRODUCT_search_cases.yaml）
 
-在 conftest.py 中预置扩展 fixture：
-product_api_empty_list：为 Session 增加 X-Mock-Scenario: products_empty header，用于 FiddlerScript 将 /products/search 强制返回空列表。
-product_api_slow：为 Session 增加 X-Simulate-SlowNet: true header，用于 FiddlerScript 添加 trickle-delay/限速，实现弱网模拟。
-对应用例加上 @pytest.mark.need_fiddler，避免在未配置 Fiddler 时误跑。
-后续只需在 FiddlerScript 中基于这些 header 写规则，就能实现“用例驱动的 Mock/弱网注入”。
+典型用例：
+关键词：iphone、samsung、模糊 phone
+边界 limit：1、超过系统上限
+特殊字符 / 不存在关键词返回 0
+YAML 字段：
+keyword / limit
+expect.min_total：total >= min_total
+expect.max_limit：len(products) <= max_limit
+expect.total：精确 total，例如 0 结果
+expect.has_field：第一条商品需包含的字段（如 title/price）
+分类到详情链路（小 E2E 流程）
 
-📊 测试报告与日志
-执行完成后，可在 logs/ 目录下查看按日期分割的运行日志（含请求/响应关键字段、耗时）。
-使用 Allure 生成可视化报告：
-每条用例按业务流程拆分为多个 steps（例如“登录”，“搜索商品”，“加入购物车”，“校验购物车金额”）。
-每个步骤包含附加的 Request/Response（JSON/文本），方便快速定位问题。
-示例报告截图可自行补充（如 Allure 的概览页面、某条失败用例的详情页等）。
+先请求 /products/category/{category} 获取某分类下产品列表
+选取其中一个产品的 id/title
+再请求 /products/{id} 获取详情，对比 id/title 一致性
+写操作（Demo 接口）
 
+针对 /products/add、/products/{id} 删除等接口，验证 Demo 环境下的响应结构和状态码，并在注释中说明“不是真实 CRUD，仅供演示”。
+5. Fiddler Mock / 弱网注入预埋
+为了支持在本地通过 Fiddler 做 Mock/弱网测试，框架在 fixture 中预埋了 header 开关：
+
+--proxy --insecure：让所有请求通过 127.0.0.1:8888 代理，并关闭证书校验（用于 HTTPS 解密）
+product_api_empty_list：
+在 Session header 增加 X-Mock-Scenario: products_empty
+可通过 FiddlerScript 检测该 header 并对 /products/search 返回固定空列表
+product_api_slow：
+在 Session header 增加 X-Simulate-SlowNet: true
+可在 FiddlerScript 中对该请求加 trickle-delay/限速，模拟弱网
+搭配 @pytest.mark.need_fiddler 标记相关用例，可实现金融/前端项目常用的：
+
+空数据/异常数据 Mock
+慢网/弱网下的接口和前端健壮性验证
+📊 测试报告 & 日志
+日志目录：logs/，按日期滚动记录每次运行的请求/响应摘要及错误堆栈。
+Allure 报告：
+每个测试用例按业务场景分多个 step（例如“登录”、“搜索商品”、“加入购物车”、“刷新 token”等）。
+每个 step 中附带：
+Request：method/url/headers/body（已脱敏）
+Response Meta：status/耗时/headers
+Response Body：JSON 或 text
 🚀 快速开始
 安装依赖
 Bash
 
 pip install -r requirements.txt
 运行测试
-默认运行（Dev 环境）
+默认运行（dev 环境）：
+
 Bash
 
 pytest
-指定环境
+指定环境：
+
 Bash
 
 pytest --env=test
-设置基础 URL（覆盖 env.yaml）
+覆盖 base_url：
+
 Bash
 
 pytest --env=test --baseurl=https://dummyjson.com
-设置网络策略：超时 & 代理（Fiddler 抓包/Mock）
+设置超时（秒）：
+
 Bash
 
-# 设置超时（秒）
 pytest --timeout=5
+通过 Fiddler 抓包 / Mock：
 
-# 通过本机 Fiddler 抓包 + HTTPS 解密（需本地开启 Fiddler，默认 8888 端口）
-pytest --proxy --insecure
-按标记运行
 Bash
 
-# 只跑核心链路（登录 + 获取当前用户 + 商品基础查询等）
+pytest --proxy --insecure
+按标记运行：
+
+Bash
+
+# 核心链路冒烟（登录 + 获取当前用户 + 核心商品接口）
 pytest -m smoke
 
-# 只跑负向/错误场景
+# 仅运行负向/边界用例
 pytest -m negative
 
-# 只跑依赖 Fiddler Mock/弱网的用例（需预先在 Fiddler 中配置规则）
+# 仅运行依赖 Fiddler Mock/弱网注入的用例（需预先配置 FiddlerScript）
 pytest -m need_fiddler --proxy --insecure
 生成 Allure 报告
 Bash
@@ -148,28 +209,28 @@ allure serve ./allure-results
 text
 
 MiniShop_API_Automation/
-├── apis/                  # 接口对象层 (API Objects)
-│   ├── base_api.py        # 核心封装 (Session, Timeout, Log, Allure, 脱敏)
-│   ├── auth_api.py        # 鉴权模块 (登录/获取当前用户/刷新 token)
-│   ├── product_api.py     # 商品模块
-│   ├── cart_api.py        # 购物车模块
-│   ├── users_api.py       # 用户模块
-│   ├── posts_api.py       # 帖子模块
-│   ├── comments_api.py    # 评论模块
-│   ├── todos_api.py       # 待办模块
-│   └── recipes_api.py     # 菜谱模块
+├── apis/                      # 接口对象层 (API Objects)
+│   ├── base_api.py            # 核心封装 (Session, Timeout, Log, Allure, 脱敏)
+│   ├── auth_api.py            # 鉴权模块
+│   ├── product_api.py         # 商品模块
+│   ├── cart_api.py            # 购物车模块
+│   ├── users_api.py           # 用户模块
+│   ├── posts_api.py           # 帖子模块
+│   ├── comments_api.py        # 评论模块
+│   ├── todos_api.py           # 待办模块
+│   └── recipes_api.py         # 菜谱模块
 ├── config/
-│   └── env.yaml           # 多环境配置 (dev/test，含 base_url/用户名/密码)
+│   └── env.yaml               # 多环境配置 (dev/test，含 base_url/用户名/密码)
 ├── data/
-│   ├── AUTH_login_cases.yaml     # 登录场景数据（正向+负向）
-│   ├── AUTH_refresh_cases.yaml   # 刷新 token 场景
-│   ├── PRODUCT_search_cases.yaml # 商品搜索场景（关键字/limit 等）
+│   ├── AUTH_login_cases.yaml      # 登录用例数据（正向+负向）
+│   ├── AUTH_refresh_cases.yaml    # 刷新 token 用例数据
+│   ├── PRODUCT_search_cases.yaml  # 商品搜索用例数据
 │   └── ...
-├── logs/                  # 运行日志（按日期切分）
-├── tests/
-│   ├── conftest.py        # Fixture 管理 & CLI 参数 & Session 工厂
-│   ├── test_auth_flow.py  # Auth 登录/鉴权/刷新 流程与用例集
-│   ├── test_product_flow.py
+├── logs/                      # 运行日志
+├── tests/                     # 测试用例层
+│   ├── conftest.py            # Fixture 管理 & CLI 参数 & Session 工厂
+│   ├── test_auth_flow.py      # Auth 登录/鉴权/刷新 流程与用例
+│   ├── test_product_flow.py   # 商品接口流程/分类链路/搜索等
 │   ├── test_cart_flow.py
 │   ├── test_users_flow.py
 │   ├── test_posts_flow.py
@@ -178,13 +239,12 @@ MiniShop_API_Automation/
 │   ├── test_recipes_flow.py
 │   └── ...
 ├── utils/
-│   ├── log_util.py        # 日志封装
-│   └── yaml_util.py       # YAML 读写工具
-├── pytest.ini             # Pytest 配置（markers、默认参数等）
-├── requirements.txt       # 依赖库
-└── run.py                 # 启动入口（可选，封装 pytest.main）
-📌 适用场景 & 可扩展方向
-作为 接口自动化框架骨架，用于实际业务项目的快速迁移与二次开发；
-结合 Fiddler/Charles，将 “header 开关 + 代理” 扩展为可控 Mock/弱网注入平台；
-引入 JMeter/Gatling 等性能工具，与当前框架共享数据/Session，形成“功能 + 性能”的一体化测试仓库；
-接入 CI（Jenkins / GitHub Actions），执行定时回归、冒烟、按标记分层执行等。
+│   ├── log_util.py            # 日志封装
+│   └── yaml_util.py           # YAML 工具
+├── pytest.ini                 # Pytest 配置（markers、默认 addopts 等）
+├── requirements.txt           # 依赖库
+└── run.py                     # 启动入口（可选，封装 pytest.main）
+📌 可扩展方向
+将 JMeter/Locust 等性能脚本整合到 performance/ 目录，形成“功能 + 性能”一体化仓库；
+扩展 BaseApi 支持重试策略（仅对 GET + 特定 5xx 生效），进一步提高用例稳定性；
+结合 GitHub Actions/Jenkins，搭建 CI 流水线：lint → pytest → Allure 报告归档/发布。
