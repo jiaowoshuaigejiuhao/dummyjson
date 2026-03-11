@@ -180,16 +180,89 @@
 
 ---
 
-## 运行测试
+# 🚀 快速开始
 
-**默认运行（dev 环境）：**
+## 安装依赖
 
 ```bash
+pip install -r requirements.txt
+运行测试
+默认运行（dev 环境）：
+Bash
+
 pytest
-```bash
+指定环境：
+Bash
 
-**指定环境：**
-
-```bash
 pytest --env=test
-```bash
+覆盖 base_url：
+Bash
+
+pytest --env=test --baseurl=https://dummyjson.com
+设置超时（秒）：
+Bash
+
+pytest --timeout=5
+通过 Fiddler 抓包 / Mock：
+Bash
+
+pytest --proxy --insecure
+按标记运行：
+Bash
+
+# 核心链路冒烟（登录 + 获取当前用户 + 核心商品接口）
+pytest -m smoke
+
+# 仅运行负向/边界用例
+pytest -m negative
+
+# 仅运行依赖 Fiddler Mock/弱网注入的用例（需预先配置 FiddlerScript）
+pytest -m need_fiddler --proxy --insecure
+生成 Allure 报告
+Bash
+
+pytest --alluredir=./allure-results
+allure serve ./allure-results
+📂 目录结构
+text
+
+MiniShop_API_Automation/
+├── apis/                      # 接口对象层 (API Objects)
+│   ├── base_api.py            # 核心封装 (Session, Timeout, Log, Allure, 脱敏)
+│   ├── auth_api.py            # 鉴权模块
+│   ├── product_api.py         # 商品模块
+│   ├── cart_api.py            # 购物车模块
+│   ├── users_api.py           # 用户模块
+│   ├── posts_api.py           # 帖子模块
+│   ├── comments_api.py        # 评论模块
+│   ├── todos_api.py           # 待办模块
+│   └── recipes_api.py         # 菜谱模块
+├── config/
+│   └── env.yaml               # 多环境配置 (dev/test，含 base_url/用户名/密码)
+├── data/
+│   ├── AUTH_login_cases.yaml      # 登录用例数据（正向+负向）
+│   ├── AUTH_refresh_cases.yaml    # 刷新 token 用例数据
+│   ├── PRODUCT_search_cases.yaml  # 商品搜索用例数据
+│   └── ...
+├── logs/                      # 运行日志
+├── tests/                     # 测试用例层
+│   ├── conftest.py            # Fixture 管理 & CLI 参数 & Session 工厂
+│   ├── test_auth_flow.py      # Auth 登录/鉴权/刷新 流程与用例
+│   ├── test_product_flow.py   # 商品接口流程/分类链路/搜索等
+│   ├── test_cart_flow.py
+│   ├── test_users_flow.py
+│   ├── test_posts_flow.py
+│   ├── test_comments_flow.py
+│   ├── test_todos_flow.py
+│   ├── test_recipes_flow.py
+│   └── ...
+├── utils/
+│   ├── log_util.py            # 日志封装
+│   └── yaml_util.py           # YAML 工具
+├── pytest.ini                 # Pytest 配置（markers、默认 addopts 等）
+├── requirements.txt           # 依赖库
+└── run.py                     # 启动入口（可选，封装 pytest.main）
+📌 可扩展方向
+将 JMeter/Locust 等性能脚本整合到 performance/ 目录，形成"功能 + 性能"一体化仓库；
+扩展 BaseApi 支持重试策略（仅对 GET + 特定 5xx 生效），进一步提高用例稳定性；
+结合 GitHub Actions/Jenkins，搭建 CI 流水线：lint → pytest → Allure 报告归档/发布。
