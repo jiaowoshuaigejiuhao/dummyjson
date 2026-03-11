@@ -6,8 +6,8 @@ class ProductApi(BaseApi):
     商品模块接口封装
     crud服务器只会mock
     """
-    def __init__(self, base_url, session):
-        super().__init__(base_url, session)
+    def __init__(self, base_url, session=None, **kwargs):
+        super().__init__(base_url=base_url, session=session, **kwargs)
 
     def get_all_products(self):
         """GET /products"""

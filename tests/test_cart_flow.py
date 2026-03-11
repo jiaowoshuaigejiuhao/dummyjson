@@ -1,8 +1,10 @@
 import random
 
 import jsonpath
+import pytest
 
 
+@pytest.mark.nondestructive
 class TestCartFlow:
     def test_get_all_carts(self, cart_api):
         res = cart_api.get_all_carts()

@@ -3,7 +3,7 @@ import random
 import allure
 import jsonpath
 
-
+@pytest.mark.nondestructive
 @allure.feature("待办事项(Todo)模块")
 class TestTodoFlow:
 

@@ -1,19 +1,84 @@
+# 正向用例：iPhone，limit 3，至少有 1 条，最多 3 条
 - case_name: "搜索 iPhone-最多返回3条商品"
   keyword: "iphone"
   limit: 3
   expect:
-    min_total: 1
-    max_limit: 3
+    min_total: 1        # 总数至少 1 条
+    max_limit: 3        # 本次返回最多 3 条
+    has_field: "title"  # 商品里至少包含 title 字段
 
+# 正向用例：Samsung，limit 5，至少有 1 条，最多 5 条
 - case_name: "搜索 Samsung-最多返回5条商品"
   keyword: "samsung"
   limit: 5
   expect:
     min_total: 1
     max_limit: 5
+    has_field: "price"  # 验证返回结果包含 price 字段
 
+# 正向用例：小写关键字，验证大小写不敏感
+- case_name: "搜索 iphone-大小写不敏感"
+  keyword: "iPhone"
+  limit: 10
+  expect:
+    min_total: 1
+    max_limit: 10
+    has_field: "title"
+
+# 正向用例：模糊关键字（如 'phone'），应该能匹配多种产品
+- case_name: "搜索 phone-模糊匹配"
+  keyword: "phone"
+  limit: 10
+  expect:
+    min_total: 3        # 预估至少有几条，数字可根据实际调整
+    max_limit: 10
+    has_field: "title"
+
+# 正向用例：空格关键字（如果 DummyJSON 支持）
+- case_name: "搜索带空格关键字-例如 smart phone"
+  keyword: "smart phone"
+  limit: 10
+  expect:
+    min_total: 0        # 如果 DummyJSON 对这种不支持，可以设成 0；否则调整
+    max_limit: 10
+
+# 边界用例：limit=1，只返回 1 条
+- case_name: "搜索 iPhone-limit为1"
+  keyword: "iphone"
+  limit: 1
+  expect:
+    min_total: 1
+    max_limit: 1
+
+# 边界用例：limit 超过默认最大（假设 DummyJSON 最大 30，你再传 100）
+- case_name: "搜索 iPhone-limit大于系统上限"
+  keyword: "iphone"
+  limit: 100
+  expect:
+    min_total: 1
+    max_limit: 30   # 如果系统上限是 30，可以按实际返回调
+
+# 负向/异常用例：特殊字符关键字（如 @#$%），一般返回 0 条
+- case_name: "搜索特殊字符关键字-应返回0条"
+  keyword: "@#$%"
+  limit: 10
+  expect:
+    total: 0
+
+# 负向用例：不存在的关键字，应返回 0 条
 - case_name: "搜索不存在的关键字-应返回0条"
   keyword: "thiskeywordshouldnotexist123456"
   limit: 10
   expect:
     total: 0
+
+# 边界用例：空字符串关键字
+- case_name: "搜索空字符串关键字-返回所有或默认行为"
+  keyword: ""
+  limit: 10
+  expect:
+    # 这里 DummyJSON 的行为你可以先跑一下：
+    # - 如果返回全部商品，min_total 可以设置为某个较大值
+    # - 如果报错，就改测试代码只在 status_code==200 才断言
+    min_total: 1
+    max_limit: 10

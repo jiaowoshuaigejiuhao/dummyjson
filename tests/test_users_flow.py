@@ -2,7 +2,7 @@ import pytest
 import random
 import allure
 
-
+@pytest.mark.nondestructive
 @allure.feature("用户管理模块")
 class TestUserFlow:
 

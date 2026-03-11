@@ -1,4 +1,6 @@
+# 正向用例
 - case_name: "登录成功-示例账号"
+  type: "positive"
   payload:
     username: "sophiab"
     password: "sophiabpass"
@@ -7,16 +9,20 @@
     has_token: true
     username: "sophiab"
 
+# 负向用例：密码错误
 - case_name: "登录失败-密码错误"
+  type: "negative"
   payload:
     username: "jamesd"
     password: "wrong_password"
   expect:
     status_code: 400
     has_token: false
-    error_msg_contains: "Invalid"
+    error_msg_contains: "Invalid"      # 实际按 DummyJSON 返回调整
 
+# 负向用例：用户名不存在
 - case_name: "登录失败-用户名不存在"
+  type: "negative"
   payload:
     username: "not_exist_user"
     password: "some_password"
@@ -25,10 +31,99 @@
     has_token: false
     error_msg_contains: "Invalid"
 
-- case_name: "登录失败-缺少密码字段"
+# 负向用例：密码为空字符串
+- case_name: "登录失败-密码为空"
+  type: "negative"
   payload:
-    username: "emmaj"
+    username: "emmajl"
     password: ""
   expect:
     status_code: 400
     has_token: false
+    error_msg_contains: "password"
+
+# 负向用例：用户名为空字符串
+- case_name: "登录失败-用户名为空"
+  type: "negative"
+  payload:
+    username: ""
+    password: "some_password"
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "username"
+
+# 负向用例：用户名为空串，密码正确
+- case_name: "登录失败-用户名为空串密码正确"
+  type: "negative"
+  payload:
+    username: ""
+    password: "sophiabpass"
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "username"
+
+# 负向用例：用户名正确，密码为空串
+- case_name: "登录失败-用户名正确密码为空串"
+  type: "negative"
+  payload:
+    username: "sophiab"
+    password: ""
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "password"
+
+# 负向用例：用户名和密码都为空串
+- case_name: "登录失败-用户名密码都为空"
+  type: "negative"
+  payload:
+    username: ""
+    password: ""
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "username"
+
+# 负向用例：缺少 username 字段
+- case_name: "登录失败-缺少用户名字段"
+  type: "negative"
+  payload:
+    password: "some_password"
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "username"
+
+# 负向用例：缺少 password 字段
+- case_name: "登录失败-缺少密码字段"
+  type: "negative"
+  payload:
+    username: "emmajl"
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "password"
+
+# 负向用例：用户名为数字类型
+- case_name: "登录失败-用户名为数字类型"
+  type: "negative"
+  payload:
+    username: 123456
+    password: "some_password"
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "username"
+
+# 负向用例：密码为数字类型
+- case_name: "登录失败-密码为数字类型"
+  type: "negative"
+  payload:
+    username: "emmajl"
+    password: 123456
+  expect:
+    status_code: 400
+    has_token: false
+    error_msg_contains: "Invalid"

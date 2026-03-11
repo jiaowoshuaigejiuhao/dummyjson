@@ -3,7 +3,7 @@ import jsonpath
 import pytest
 import allure
 
-
+@pytest.mark.nondestructive
 @allure.feature("食谱模块")
 class TestRecipeFlow:
 

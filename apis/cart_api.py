@@ -6,8 +6,8 @@ class CartApi(BaseApi):
     """
     购物车模块封装
     """
-    def __init__(self, base_url, session=None):
-        super().__init__(base_url, session)
+    def __init__(self, base_url, session=None, **kwargs):
+        super().__init__(base_url=base_url, session=session, **kwargs)
 
     def get_all_carts(self):
         """GET /carts"""

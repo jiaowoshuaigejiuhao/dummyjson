@@ -3,7 +3,7 @@ import random
 import allure
 import jsonpath
 
-
+@pytest.mark.nondestructive
 @allure.feature("评论模块")
 class TestCommentFlow:
 

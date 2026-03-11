@@ -1,23 +1,59 @@
-- case_name: "刷新成功-已登录"
+# 刷新成功 - 已登录，使用有效 token 刷新
+- case_name: "刷新成功-已登录有效token"
+  type: "positive"
+  pre_login: true        # 先用 config 中的账号密码正常登录，拿到有效 token
+  fake_token: null       # 不伪造 token，直接用真实 token 刷新
+  expect:
+    status_code: 200         # /auth/refresh 返回 200
+    has_token: true          # 刷新响应里应该有新的 token(accessToken/token)
+    get_me_status_code: 200  # 用新 token 调 /auth/me 成功
+
+# 刷新失败 - 未登录（没有任何 token）
+- case_name: "刷新失败-未登录无token"
+  type: "negative"
+  pre_login: false
+  fake_token: null
+  expect:
+    status_code: 401         # 未授权（也可以改成 400/403，看你系统设计）
+    has_token: false
+    get_me_status_code: 401  # 后续 /auth/me 仍然未授权
+
+# 刷新失败 - 伪造 token（格式错误/根本不是这个系统发的）
+- case_name: "刷新失败-伪造token"
+  type: "negative"
+  pre_login: false
+  fake_token: "invalid_token"    # 手动塞一个假的 token
+  expect:
+    status_code: 401             # 刷新失败
+    has_token: false
+    get_me_status_code: 401      # 用这个 token 调 /auth/me 也应失败
+
+# 刷新失败 - token 字段为空字符串
+- case_name: "刷新失败-token为空串"
+  type: "negative"
+  pre_login: false
+  fake_token: ""                         # 空串也当无效 token 处理
+  expect:
+    status_code: 401
+    has_token: false
+    get_me_status_code: 401
+
+# 刷新失败 - token 类型错误（数字）
+- case_name: "刷新失败-token为数字类型"
+  type: "negative"
+  pre_login: false
+  fake_token: 123456                     # 非字符串类型，模拟调用方 bug
+  expect:
+    status_code: 401                     # 参数不合法
+    has_token: false
+    get_me_status_code: 401              # 后续 /auth/me 仍然失败
+
+# 刷新成功 - 已登录但多次刷新（允许重复刷新）
+- case_name: "刷新成功-重复刷新"
+  type: "positive"
   pre_login: true
   fake_token: null
   expect:
     status_code: 200
     has_token: true
     get_me_status_code: 200
-
-- case_name: "刷新失败-未登录"
-  pre_login: false
-  fake_token: null
-  expect:
-    status_code: 401
-    has_token: false
-    get_me_status_code: 401
-
-- case_name: "刷新失败-伪造token"
-  pre_login: false
-  fake_token: "invalid_token"
-  expect:
-    status_code: 401
-    has_token: false
-    get_me_status_code: 401

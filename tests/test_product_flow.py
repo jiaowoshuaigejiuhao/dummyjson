@@ -1,16 +1,18 @@
 import pytest
 import random
 import allure
+
 from utils.yaml_util import load_yaml
 
 
 search_cases = load_yaml('data/PRODUCT_product_cases.yaml')
 
-
+@pytest.mark.nondestructive
 @allure.feature("商品管理模块")
 class TestProductFlow:
 
     @allure.story("获取所有商品")
+    @pytest.mark.smoke
     def test_get_all_products(self, product_api):
         res = product_api.get_all_products()
         assert res.status_code == 200
@@ -23,6 +25,7 @@ class TestProductFlow:
         assert len(products) == 30
 
     @allure.story("获取单个商品")
+    @pytest.mark.smoke
     def test_get_single_product(self, product_api):
         # 随机找一个 ID (1-30之间)
         p_id = random.randint(1, 30)
@@ -35,6 +38,7 @@ class TestProductFlow:
         assert "title" in data
 
     @allure.story("商品搜索")
+    @pytest.mark.smoke
     @pytest.mark.parametrize('case', search_cases, ids=[c['case_name'] for c in search_cases])
     def test_search_products(self, product_api, case):
         keyword = case['keyword']

@@ -2,8 +2,8 @@ from apis.base_api import BaseApi
 
 
 class RecipeApi(BaseApi):
-    def __init__(self, base_url, session=None):
-        super().__init__(base_url, session)
+    def __init__(self, base_url, session=None, **kwargs):
+        super().__init__(base_url=base_url, session=session, **kwargs)
 
     def get_all_recipes(self):
         """GET /recipes"""
