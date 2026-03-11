@@ -60,7 +60,7 @@
     - `AUTH_login_cases.yaml`：登录正/反向场景
     - `AUTH_refresh_cases.yaml`：刷新 token 场景
     - `PRODUCT_search_cases.yaml`：商品搜索/分页/边界场景
-  - 通过“先查后用”的动态关联策略避免硬编码 ID（userId/productId/cartId）
+  - 通过"先查后用"的动态关联策略避免硬编码 ID（userId/productId/cartId）
 
 - **报告 & 日志**
   - Allure 2：按业务场景拆 step，附加 Request/Response（JSON/文本）  
@@ -76,7 +76,7 @@
 
 - `shared_session`（`session` 作用域）  
   - 业务回归使用：`logged_in_auth_api` 在会话级别登录一次，将 token 写入 `shared_session.headers["Authorization"]`。  
-  - 其他 Api（`ProductApi / CartApi / UsersApi ...`）通过 `api_factory` 复用该 Session，实现“登录一次，全局复用”。
+  - 其他 Api（`ProductApi / CartApi / UsersApi ...`）通过 `api_factory` 复用该 Session，实现"登录一次，全局复用"。
 
 - `clean_session`（`function` 作用域）  
   - 负向/隔离场景使用：`auth_api` 使用独立 Session，测试错误密码、伪造 token 等，不会污染全局登录态。
@@ -147,7 +147,7 @@
   - 再请求 `/products/{id}` 获取详情，对比 `id/title` 一致性
 
 - **写操作（Demo 接口）**
-  - 针对 `/products/add`、`/products/{id}` 删除等接口，验证 Demo 环境下的响应结构和状态码，并在注释中说明“不是真实 CRUD，仅供演示”。
+  - 针对 `/products/add`、`/products/{id}` 删除等接口，验证 Demo 环境下的响应结构和状态码，并在注释中说明"不是真实 CRUD，仅供演示"。
 
 ### 5. Fiddler Mock / 弱网注入预埋
 
@@ -172,7 +172,7 @@
 
 - 日志目录：`logs/`，按日期滚动记录每次运行的请求/响应摘要及错误堆栈。
 - Allure 报告：
-  - 每个测试用例按业务场景分多个 step（例如“登录”、“搜索商品”、“加入购物车”、“刷新 token”等）。
+  - 每个测试用例按业务场景分多个 step（例如"登录"、"搜索商品"、"加入购物车"、"刷新 token"等）。
   - 每个 step 中附带：
     - Request：method/url/headers/body（已脱敏）
     - Response Meta：status/耗时/headers
@@ -180,100 +180,16 @@
 
 ---
 
-## 🚀 快速开始
-
-### 安装依赖
-
-```bash
-pip install -r requirements.txt
-
-Markdown
-
 ## 运行测试
 
 **默认运行（dev 环境）：**
 
 ```bash
 pytest
-指定环境：
+```bash
 
-Bash
+**指定环境：**
 
+```bash
 pytest --env=test
-覆盖 base_url：
-
-Bash
-
-pytest --env=test --baseurl=https://dummyjson.com
-设置超时（秒）：
-
-Bash
-
-pytest --timeout=5
-通过 Fiddler 抓包 / Mock：
-
-Bash
-
-pytest --proxy --insecure
-按标记运行：
-
-Bash
-
-# 核心链路冒烟（登录 + 获取当前用户 + 核心商品接口）
-pytest -m smoke
-
-# 仅运行负向/边界用例
-pytest -m negative
-
-# 仅运行依赖 Fiddler Mock/弱网注入的用例（需预先配置 FiddlerScript）
-pytest -m need_fiddler --proxy --insecure
-生成 Allure 报告
-Bash
-
-pytest --alluredir=./allure-results
-allure serve ./allure-results
-📂 目录结构
-text
-
-MiniShop_API_Automation/
-├── apis/                      # 接口对象层 (API Objects)
-│   ├── base_api.py            # 核心封装 (Session, Timeout, Log, Allure, 脱敏)
-│   ├── auth_api.py            # 鉴权模块
-│   ├── product_api.py         # 商品模块
-│   ├── cart_api.py            # 购物车模块
-│   ├── users_api.py          # 用户模块
-│   ├── posts_api.py           # 帖子模块
-│   ├── comments_api.py        # 评论模块
-│   ├── todos_api.py           # 待办模块
-│   └── recipes_api.py         # 菜谱模块
-├── config/
-│   └── env.yaml               # 多环境配置 (dev/test，含 base_url/用户名/密码)
-├── data/
-│   ├── AUTH_login_cases.yaml      # 登录用例数据（正向+负向）
-│   ├── AUTH_refresh_cases.yaml    # 刷新 token 用例数据
-│   ├── PRODUCT_search_cases.yaml  # 商品搜索用例数据
-│   └── ...
-├── logs/                      # 运行日志
-├── tests/                     # 测试用例层
-│   ├── conftest.py            # Fixture 管理 & CLI 参数 & Session 工厂
-│   ├── test_auth_flow.py      # Auth 登录/鉴权/刷新 流程与用例
-│   ├── test_product_flow.py   # 商品接口流程/分类链路/搜索等
-│   ├── test_cart_flow.py
-│   ├── test_users_flow.py
-│   ├── test_posts_flow.py
-│   ├── test_comments_flow.py
-│   ├── test_todos_flow.py
-│   ├── test_recipes_flow.py
-│   └── ...
-├── utils/
-│   ├── log_util.py            # 日志封装
-│   └── yaml_util.py           # YAML 工具
-├── pytest.ini                 # Pytest 配置（markers、默认 addopts 等）
-├── requirements.txt           # 依赖库
-└── run.py                     # 启动入口（可选，封装 pytest.main）
-📌 可扩展方向
-将 JMeter/Locust 等性能脚本整合到 performance/ 目录，形成"功能 + 性能"一体化仓库；
-扩展 BaseApi 支持重试策略（仅对 GET + 特定 5xx 生效），进一步提高用例稳定性；
-结合 GitHub Actions/Jenkins，搭建 CI 流水线：lint → pytest → Allure 报告归档/发布。
-
-
+```bash
