@@ -178,38 +178,49 @@
     - Response Meta：status/耗时/headers
     - Response Body：JSON 或 text
 
----
-
 # 🚀 快速开始
 
 ## 安装依赖
 
 ```bash
 pip install -r requirements.txt
-运行测试
-默认运行（dev 环境）：
-Bash
+```
 
+## 运行测试
+
+### 默认运行（dev 环境）：
+
+```bash
 pytest
-指定环境：
-Bash
+```
 
+### 指定环境：
+
+```bash
 pytest --env=test
-覆盖 base_url：
-Bash
+```
 
+### 覆盖 base_url：
+
+```bash
 pytest --env=test --baseurl=https://dummyjson.com
-设置超时（秒）：
-Bash
+```
 
+### 设置超时（秒）：
+
+```bash
 pytest --timeout=5
-通过 Fiddler 抓包 / Mock：
-Bash
+```
 
+### 通过 Fiddler 抓包 / Mock：
+
+```bash
 pytest --proxy --insecure
-按标记运行：
-Bash
+```
 
+### 按标记运行：
+
+```bash
 # 核心链路冒烟（登录 + 获取当前用户 + 核心商品接口）
 pytest -m smoke
 
@@ -218,14 +229,18 @@ pytest -m negative
 
 # 仅运行依赖 Fiddler Mock/弱网注入的用例（需预先配置 FiddlerScript）
 pytest -m need_fiddler --proxy --insecure
-生成 Allure 报告
-Bash
+```
 
+## 生成 Allure 报告
+
+```bash
 pytest --alluredir=./allure-results
 allure serve ./allure-results
-📂 目录结构
-text
+```
 
+# 📂 目录结构
+
+```text
 MiniShop_API_Automation/
 ├── apis/                      # 接口对象层 (API Objects)
 │   ├── base_api.py            # 核心封装 (Session, Timeout, Log, Allure, 脱敏)
@@ -262,7 +277,10 @@ MiniShop_API_Automation/
 ├── pytest.ini                 # Pytest 配置（markers、默认 addopts 等）
 ├── requirements.txt           # 依赖库
 └── run.py                     # 启动入口（可选，封装 pytest.main）
-📌 可扩展方向
-将 JMeter/Locust 等性能脚本整合到 performance/ 目录，形成"功能 + 性能"一体化仓库；
-扩展 BaseApi 支持重试策略（仅对 GET + 特定 5xx 生效），进一步提高用例稳定性；
-结合 GitHub Actions/Jenkins，搭建 CI 流水线：lint → pytest → Allure 报告归档/发布。
+```
+
+# 📌 可扩展方向
+
+- 将 JMeter/Locust 等性能脚本整合到 `performance/` 目录，形成“功能 + 性能”一体化仓库；
+- 扩展 `BaseApi` 支持重试策略（仅对 GET + 特定 5xx 生效），进一步提高用例稳定性；
+- 结合 GitHub Actions/Jenkins，搭建 CI 流水线：lint → pytest → Allure 报告归档/发布。
